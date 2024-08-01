@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playlist YouTube & URLs des Playlists Utilisées</title>
+    <style>
+        body {
+            background-color: #000000; /* Noir de fond */
+            color: #ffffff; /* Texte blanc pour le contraste */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            background-color: #d32f2f; /* Rouge vif pour l'en-tête */
+            color: #ffffff; /* Texte blanc */
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        #playlistInputContainer {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #playlistInput {
+            padding: 10px;
+            font-size: 16px;
+            width: 300px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        #loadPlaylistButton, #viewUrlsButton, #saveVideoButton, #backButton, .copyButton {
+            background-color: #d32f2f; /* Rouge pour les boutons */
+            color: #ffffff; /* Texte blanc */
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-left: 10px;
+            margin-top: 10px;
+        }
+
+        #loadPlaylistButton:hover, #viewUrlsButton:hover, #saveVideoButton:hover, #backButton:hover, .copyButton:hover {
+            background-color: #b71c1c; /* Rouge plus foncé au survol */
+        }
+
+        #playlist {
+            list-style: none;
+            padding: 0;
+            width: 80%;
+            max-width: 1200px;
+        }
+
+        .video-item {
+            display: flex;
+            align-items: center;
+            background-color: #1e1e1e; /* Gris très foncé pour les éléments */
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .video-item img {
+            margin-right: 10px;
+            border-radius: 4px;
+            width: 120px;
+            height: 90px;
+            object-fit: cover;
+        }
+
+        .video-item a {
+            text-decoration: none;
+            color: #ffffff; /* Texte blanc pour les liens */
+            flex-grow: 1;
+            font-size: 16px;
+        }
+
+        .video-item button {
+            margin-left: 10px;
+            border: none;
+            background: #d32f2f; /* Rouge pour les boutons */
+            color: #ffffff; /* Texte blanc pour les boutons */
+            cursor: pointer;
+            font-size: 20px;
+            border-radius: 4px;
+            padding: 5px 10px;
+            transition: background 0.3s;
+        }
+
+        .video-item button:hover {
+            background: #b71c1c; /* Rouge plus foncé au survol */
+        }
+
+        .video-item .watched {
+            background: #b71c1c; /* Rouge pour les vidéos vues */
+        }
+
+        .video-item .unwatched {
+            background: #d32f2f; /* Rouge vif pour les vidéos non vues */
+        }
+
+        .stats {
+            color: #cccccc; /* Gris clair pour les statistiques */
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        footer {
+            background-color: #1e1e1e; /* Gris foncé pour le pied de page */
+            color: #ffffff; /* Texte blanc */
+            padding: 10px;
+            text-align: center;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            width: 80%;
+            max-width: 1200px;
+        }
+
+        li {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background-color: #1e1e1e; /* Gris très foncé pour les éléments */
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        li a {
+            color: #ffffff; /* Texte blanc pour les liens */
+            text-decoration: none;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .playlist-title {
+            font-size: 18px;
+            color: #d32f2f; /* Rouge pour le titre de la playlist */
+            margin-bottom: 10px;
+        }
+
+        .copyButton {
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 4px;
+            background-color: #d32f2f; /* Rouge pour les boutons de copie */
+            transition: background 0.3s;
+        }
+
+        .copyButton:hover {
+            background-color: #b71c1c; /* Rouge plus foncé au survol */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        Playlist YouTube
+    </header>
+
+    <div id="playlistInputContainer">
+        <input type="text" id="playlistInput" placeholder="Entrez l'URL de la playlist YouTube">
+        <button id="loadPlaylistButton">Charger la playlist</button>
+        <button id="viewUrlsButton">Voir les URL utilisées</button>
+    </div>
+    
+    <ul id="playlist"></ul>
+    <button id="saveVideoButton">Sauvegarder la dernière vidéo</button>
+
+    <ul id="urlsList" style="display:none;"></ul>
+    <button id="backButton" style="display:none;">Retour</button>
+
+    <footer>
+        © 2024 Votre Site Web
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const apiKey = 'AIzaSyAdRFm1Ns4cr6SockbnlsMQIGorgk-3ScQ'; // Remplacez par votre clé API valide
+            const playlistInput = document.getElementById('playlistInput');
+            const loadPlaylistButton = document.getElementById('loadPlaylistButton');
+            const viewUrlsButton = document.getElementById('viewUrlsButton');
+            const playlistElement = document.getElementById('playlist');
+            const saveVideoButton = document.getElementById('saveVideoButton');
+            const urlsListElement = document.getElementById('urlsList');
+            const backButton = document.getElementById('backButton');
+            const refreshInterval = 60000; // 60 secondes
+
+            function getStoredPlaylistId() {
+                return localStorage.getItem('playlistId');
+            }
+
+            function storePlaylistId(playlistId) {
+                localStorage.setItem('playlistId', playlistId);
+            }
+
+            function getWatchedVideos() {
+                const watchedVideos = localStorage.getItem('watchedVideos');
+                return watchedVideos ? JSON.parse(watchedVideos) : [];
+            }
+
+            function saveWatchedVideos(watchedVideos) {
+                localStorage.setItem('watchedVideos', JSON.stringify(watchedVideos));
+            }
+
+            function getStoredUrls() {
+                const urls = localStorage.getItem('usedUrls');
+                return urls ? JSON.parse(urls) : [];
+            }
+
+            function storeUrl(url) {
+                let urls = getStoredUrls();
+                if (!urls.includes(url)) {
+                    urls.push(url);
+                    localStorage.setItem('usedUrls', JSON.stringify(urls));
+                }
+            }
+
+            function toggleWatched(videoId) {
+                let watchedVideos = getWatchedVideos();
+                if (watchedVideos.includes(videoId)) {
+                    watchedVideos = watchedVideos.filter(id => id !== videoId);
+                } else {
+                    watchedVideos.push(videoId);
+                }
+                saveWatchedVideos(watchedVideos);
+                displayPlaylist(getStoredPlaylistId());
+            }
+
+            function isVideoWatched(videoId) {
+                const watchedVideos = getWatchedVideos();
+                return watchedVideos.includes(videoId);
+            }
+
+            async function fetchPlaylistVideos(playlistId, pageToken = '') {
+                try {
+                    const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${apiKey}&pageToken=${pageToken}`;
+                    console.log(`Fetching videos from: ${url}`);
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`HTTP error! status: ${response.status}. Details: ${JSON.stringify(errorData)}`);
+                    }
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error fetching playlist videos:', error);
+                    alert(`Erreur lors de la récupération des vidéos de la playlist : ${error.message}`);
+                    return { items: [] };
+                }
+            }
+
+            async function fetchVideoStats(videoId) {
+                try {
+                    const url = `https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=${videoId}&key=${apiKey}`;
+                    console.log(`Fetching video stats from: ${url}`);
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`HTTP error! status: ${response.status}. Details: ${JSON.stringify(errorData)}`);
+                    }
+                    const data = await response.json();
+                    return data.items[0];
+                } catch (error) {
+                    console.error('Error fetching video stats:', error);
+                    alert(`Erreur lors de la récupération des statistiques de la vidéo : ${error.message}`);
+                    return null;
+                }
+            }
+
+            async function displayPlaylist(playlistId) {
+                if (!playlistId) {
+                    playlistElement.innerHTML = '';
+                    return;
+                }
+
+                const data = await fetchPlaylistVideos(playlistId);
+                if (!data || data.items.length === 0) {
+                    alert('Aucune vidéo trouvée pour cette playlist.');
+                    return;
+                }
+
+                playlistElement.innerHTML = '';
+                for (const item of data.items) {
+                    const videoId = item.snippet.resourceId.videoId;
+                    const videoTitle = item.snippet.title;
+                    const videoThumbnail = item.snippet.thumbnails.default.url;
+                    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                    const isWatched = isVideoWatched(videoId);
+
+                    const statsData = await fetchVideoStats(videoId);
+                    const viewCount = statsData ? statsData.statistics.viewCount : 'N/A';
+                    const subscriberCount = statsData ? statsData.snippet.channelTitle : 'N/A';
+                    const commentCount = statsData ? statsData.statistics.commentCount : 'N/A';
+
+                    const videoItem = document.createElement('li');
+                    videoItem.classList.add('video-item');
+                    videoItem.innerHTML = `
+                        <img src="${videoThumbnail}" alt="${videoTitle}">
+                        <div>
+                            <h3>${videoTitle}</h3>
+                            <div class="stats">Vues: ${viewCount} | Youtubeur: ${subscriberCount} | Commentaires: ${commentCount}</div>
+                        </div>
+                        <a href="${videoUrl}" target="_blank">Regarder</a>
+                        <button class="${isWatched ? 'watched' : 'unwatched'}" onclick="toggleWatched('${videoId}')">
+                            ${isWatched ? '✓' : '✗'}
+                        </button>
+                    `;
+
+                    playlistElement.appendChild(videoItem);
+                }
+            }
+
+            async function displayUrls() {
+                const urls = getStoredUrls();
+                urlsListElement.innerHTML = '';
+                for (const url of urls) {
+                    const playlistIdMatch = url.match(/(?:list=)([a-zA-Z0-9-_]+)/);
+                    let playlistTitle = 'Chargement...';
+                    if (playlistIdMatch && playlistIdMatch[1]) {
+                        playlistTitle = await fetchPlaylistTitle(playlistIdMatch[1]);
+                    }
+
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <div class="playlist-title">${playlistTitle}</div>
+                        <a href="${url}" target="_blank">${url}</a>
+                        <button class="copyButton" onclick="copyToClipboard('${url}')">Copier</button>
+                    `;
+                    urlsListElement.appendChild(listItem);
+                }
+            }
+
+            function copyToClipboard(text) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('URL copiée dans le presse-papiers : ' + text);
+            }
+
+            async function fetchPlaylistTitle(playlistId) {
+                try {
+                    const url = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${apiKey}`;
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`HTTP error! status: ${response.status}. Details: ${JSON.stringify(errorData)}`);
+                    }
+                    const data = await response.json();
+                    return data.items && data.items.length > 0 ? data.items[0].snippet.title : 'Titre non disponible';
+                } catch (error) {
+                    console.error('Error fetching playlist title:', error);
+                    alert(`Erreur lors de la récupération du titre de la playlist : ${error.message}`);
+                    return 'Titre non disponible';
+                }
+            }
+
+            function startAutoRefresh() {
+                setInterval(async () => {
+                    const playlistId = getStoredPlaylistId();
+                    if (playlistId) {
+                        await displayPlaylist(playlistId);
+                    }
+                }, refreshInterval);
+            }
+
+            loadPlaylistButton.addEventListener('click', function () {
+                const playlistUrl = playlistInput.value.trim();
+                const playlistIdMatch = playlistUrl.match(/(?:list=)([a-zA-Z0-9-_]+)/);
+                if (playlistIdMatch && playlistIdMatch[1]) {
+                    const playlistId = playlistIdMatch[1];
+                    storePlaylistId(playlistId);
+                    storeUrl(playlistUrl);
+                    displayPlaylist(playlistId);
+                    urlsListElement.style.display = 'none'; // Hide URL list
+                    backButton.style.display = 'none'; // Hide back button
+                } else {
+                    alert('URL de playlist invalide. Veuillez entrer une URL valide.');
+                }
+            });
+
+            viewUrlsButton.addEventListener('click', function () {
+                playlistElement.style.display = 'none'; // Hide playlist
+                loadPlaylistButton.style.display = 'none'; // Hide load playlist button
+                saveVideoButton.style.display = 'none'; // Hide save video button
+                urlsListElement.style.display = 'block'; // Show URL list
+                backButton.style.display = 'block'; // Show back button
+                displayUrls();
+            });
+
+            backButton.addEventListener('click', function () {
+                playlistElement.style.display = 'block'; // Show playlist
+                loadPlaylistButton.style.display = 'inline'; // Show load playlist button
+                saveVideoButton.style.display = 'inline'; // Show save video button
+                urlsListElement.style.display = 'none'; // Hide URL list
+                backButton.style.display = 'none'; // Hide back button
+            });
+
+            saveVideoButton.addEventListener('click', async function () {
+                const playlistId = getStoredPlaylistId();
+                if (!playlistId) {
+                    alert('Aucune playlist chargée.');
+                    return;
+                }
+                const data = await fetchPlaylistVideos(playlistId);
+                if (!data || data.items.length === 0) {
+                    alert('Aucune vidéo à sauvegarder.');
+                    return;
+                }
+                const lastVideo = data.items[data.items.length - 1].snippet;
+                localStorage.setItem('lastVideo', JSON.stringify(lastVideo));
+                alert('Dernière vidéo sauvegardée : ' + lastVideo.title);
+            });
+
+            // Load stored playlistId on page load
+            const storedPlaylistId = getStoredPlaylistId();
+            if (storedPlaylistId) {
+                playlistInput.value = `https://www.youtube.com/playlist?list=${storedPlaylistId}`;
+                displayPlaylist(storedPlaylistId);
+                startAutoRefresh(); // Start auto-refresh when playlist is loaded
+            }
+
+            // Expose functions globally
+            window.toggleWatched = toggleWatched;
+            window.copyToClipboard = copyToClipboard;
+        });
+    </script>
+</body>
+</html>
